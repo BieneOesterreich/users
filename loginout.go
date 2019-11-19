@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/rivo/sessions"
@@ -25,8 +26,18 @@ func LogIn(response http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		// Display a login form.
-		RenderPageBasic(response, request, "login.gohtml", nil)
+		queryValues := request.URL.Query()
+		redirect := queryValues.Get(Config.RedirectQueryParamName)
+
+		if redirect == "" {
+			// Display a login form.
+			RenderPageBasic(response, request, "login.gohtml", nil)
+			return
+		}
+
+		// Display a login form with redirect path
+		data := map[string]interface{}{"config": Config, "redirect": redirect}
+		RenderPage(response, request, "login.gohtml", data)
 		return
 	}
 
@@ -84,7 +95,15 @@ func LogIn(response http.ResponseWriter, request *http.Request) {
 	if Config.LoggedIn != nil {
 		Config.LoggedIn(user, request.RemoteAddr)
 	}
-	http.Redirect(response, request, Config.RouteLoggedIn, 302)
+
+	queryValues := request.URL.Query()
+	redirect, err := url.QueryUnescape(queryValues.Get(Config.RedirectQueryParamName))
+
+	if err != nil && redirect == "" {
+		redirect = Config.RouteLoggedIn
+	}
+
+	http.Redirect(response, request, redirect, 302)
 }
 
 // IsLoggedIn checks if a user is logged in. If they are, the User object is
