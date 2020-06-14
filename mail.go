@@ -71,6 +71,8 @@ func SendMail(request *http.Request, email, mailTemplate string, data interface{
 	body := append(
 		[]byte("From: "+Config.SenderName+" <"+Config.SenderEmail+">\r\n"+
 			"To: "+email+"\r\n"+
+			"MIME-Version: 1.0\r\n"+
+			"Content-Type: text/plain; charset=\"utf-8\"\r\n"+
 			"Subject: "),
 		linebreakFix.ReplaceAll(text.Bytes(), []byte("\r\n"))...,
 	)
